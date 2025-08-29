@@ -1,35 +1,10 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
-import Image from "next/image";
-import React from "react";
-import dynamic from "next/dynamic";
-
-// Dynamically import MapContainer to avoid SSR issues
-const MapContainer = dynamic(() => import("react-leaflet").then(mod => mod.MapContainer), { ssr: false });
-const TileLayer = dynamic(() => import("react-leaflet").then(mod => mod.TileLayer), { ssr: false });
-const Marker = dynamic(() => import("react-leaflet").then(mod => mod.Marker), { ssr: false });
-const Popup = dynamic(() => import("react-leaflet").then(mod => mod.Popup), { ssr: false });
-
-interface locationType {
-  id: number,
-  name: string,
-  latitude: number,
-  longitude: number,
-  elevation?: number,
-  feature_code?: string,
-  country_code?: string,
-  admin1_id?: number,
-  admin2_id?: number,
-  admin3_id?: number,
-  timezone?: string,
-  population?: number,
-  country_id?: number,
-  country: string,
-  admin1?: string,
-  admin2?: string,
-  admin3?: string
-}
+import React, { useState } from "react";
+import { locationType } from "../components/types";
+import LocationDetails from "@/components/LocationDetails/LocationDetails";
+import LocationMap from "@/components/LocationMap/LocationMap";
+import LocationList from "@/components/LocationList/LocationList";
 
 const sampleLocation: locationType[] = [
   {
@@ -177,7 +152,7 @@ const sampleLocation: locationType[] = [
   },
   {
     "id": 1512550,
-    "name": "To’ra",
+    "name": "Tura",
     "latitude": 40.43132,
     "longitude": 66.28715,
     "elevation": 724.0,
@@ -192,73 +167,28 @@ const sampleLocation: locationType[] = [
 ]
 
 export default function Home() {
-  const [locations, setLocations] = React.useState<locationType[]>(sampleLocation);
-  const [searchTerm, setSearchTerm] = React.useState<string>("");
-  const [selectedLocation, setSelectedLocation] = React.useState<locationType>(sampleLocation[0]);
-  
+  const [locations, setLocations] = useState<locationType[]>(sampleLocation);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [selectedLocation, setSelectedLocation] = useState<locationType>(sampleLocation[0]);
+
   const handleLocationClick = (location: locationType) => {
     setSelectedLocation(location);
   };
 
   return (
     <div className="h-screen w-full grid grid-cols-1 lg:grid-cols-3">
-      <div className="p-4 lg:block">
-        <Input 
-          placeholder="Search locations..." 
-          value={searchTerm} 
-          onChange={(e) => setSearchTerm(e.target.value)} 
-          className="mb-4"
-        />
-        <div className="flex flex-col h-[calc(100vh-120px)] overflow-y-auto">
-          {locations.filter(location => 
-            location.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            location.country.toLowerCase().includes(searchTerm.toLowerCase())
-          ).map(location => locationCard(location, handleLocationClick, selectedLocation.id === location.id))}
-        </div>
-      </div>
+      <LocationList
+        locations={locations}
+        searchTerm={searchTerm}
+        selectedLocationId={selectedLocation.id}
+        onLocationClick={handleLocationClick}
+        onSearchTermChange={setSearchTerm}
+      />
       <div className="col-span-1 lg:col-span-2">
         <div className="grid grid-cols-1 md:grid-cols-2 h-full">
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 flex flex-col justify-center">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">{selectedLocation.name}</h2>
-            <p className="text-gray-600 mb-1">{selectedLocation.admin1}, {selectedLocation.country}</p>
-            <p className="text-sm text-gray-500 mb-4">
-              Lat: {selectedLocation.latitude.toFixed(4)}, Lon: {selectedLocation.longitude.toFixed(4)}
-            </p>
-            {selectedLocation.elevation && (
-              <p className="text-sm text-gray-500 mb-2">Elevation: {selectedLocation.elevation}m</p>
-            )}
-            {selectedLocation.population && (
-              <p className="text-sm text-gray-500 mb-2">Population: {selectedLocation.population.toLocaleString()}</p>
-            )}
-            {selectedLocation.timezone && (
-              <p className="text-sm text-gray-500">Timezone: {selectedLocation.timezone}</p>
-            )}
-          </div>
+          <LocationDetails location={selectedLocation} />
           <div className="p-4">
-            <div className="rounded-2xl h-full w-full overflow-hidden shadow-lg">
-            {typeof window !== 'undefined' && (
-              <MapContainer 
-                center={[selectedLocation.latitude, selectedLocation.longitude] as [number, number]} 
-                zoom={13} 
-                style={{ height: '100%', width: '100%', minHeight: '400px' }}
-                scrollWheelZoom={true}
-                key={`${selectedLocation.latitude}-${selectedLocation.longitude}`}
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                <Marker position={[selectedLocation.latitude, selectedLocation.longitude] as [number, number]}>
-                  <Popup>
-                    <div className="text-center">
-                      <strong>{selectedLocation.name}</strong><br />
-                      {selectedLocation.admin1}, {selectedLocation.country}
-                    </div>
-                  </Popup>
-                </Marker>
-              </MapContainer>
-            )}
-            </div>
+            <LocationMap location={selectedLocation} />
           </div>
           <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 flex items-center justify-center">
             <div className="text-center">
@@ -274,25 +204,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function locationCard(location: locationType, onClick: (location: locationType) => void, isSelected: boolean) {
-  return (
-    <div 
-      key={location.id} 
-      className={`p-4 border-b border-gray-300 hover:bg-gray-100 cursor-pointer transition-colors ${
-        isSelected ? 'bg-blue-50 border-blue-200' : ''
-      }`}
-      onClick={() => onClick(location)}
-    >
-      <div className="font-bold">{location.name}, {location.country}</div>
-      <div className="text-sm text-gray-600">{location.admin1}{location.admin2 ? `, ${location.admin2}` : ''}</div>
-      <div className="text-sm text-gray-600">Lat: {location.latitude.toFixed(4)}, Lon: {location.longitude.toFixed(4)}</div>
-      {location.population && (
-        <div className="text-xs text-gray-500 mt-1">Population: {location.population.toLocaleString()}</div>
-      )}
     </div>
   );
 }
