@@ -33,7 +33,7 @@ async function fetchWeather(lat, lon) {
       pressure,
       humidity,
       weathercode: data.current_weather.weathercode,
-      date: currentTime, // <-- add this
+      date: currentTime,
     };
   }
   throw new Error("Weather data not found");
@@ -58,7 +58,7 @@ export default function App() {
         pressure: weatherData.pressure,
         humidity: weatherData.humidity,
         weathercode: weatherData.weathercode,
-        date: weatherData.date, // <-- add this
+        date: weatherData.date, 
       });
     } catch (err) {
       setError(err.message);
