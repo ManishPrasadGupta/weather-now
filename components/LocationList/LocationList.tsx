@@ -11,10 +11,11 @@ export interface LocationListProps {
   selectedLocationId: number;
   onLocationClick: (location: locationType) => void;
   onSearchTermChange: (term: string) => void;
+  weatherMap?: { [id: number]: number | null }; // locationId -> temperature
 }
 
 export default function LocationList({
-  locations, searchTerm, selectedLocationId, onLocationClick, onSearchTermChange
+  locations, searchTerm, selectedLocationId, onLocationClick, onSearchTermChange, weatherMap
 }: LocationListProps) {
   return (
     <div className="p-4 lg:block">
@@ -34,6 +35,7 @@ export default function LocationList({
             location={location}
             onClick={onLocationClick}
             isSelected={selectedLocationId === location.id}
+            temperature={weatherMap ? weatherMap[location.id] : null} // pass temperature
           />
         ))}
       </div>
